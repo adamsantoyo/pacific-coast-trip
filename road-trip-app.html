@@ -144,6 +144,35 @@
       border-left-color: var(--color-today);
     }
 
+    .trip-progress {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .progress-bar-container {
+      flex: 1;
+      height: 8px;
+      background: var(--color-border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--color-accent), var(--color-success));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .progress-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+    }
+
     .map-nav {
       position: absolute;
       top: 10px;
@@ -1463,18 +1492,70 @@
       const el = document.getElementById("tripBanner");
       if (!el) return;
       const todayIdx = computeTodayIndex();
+
+      // Clear existing content
+      el.innerHTML = "";
+
       if (todayIdx >= 1 && todayIdx <= tripData.totalDays) {
         const day = findDay(todayIdx);
         const title = day ? day.title : "";
         el.classList.add("active");
-        el.textContent = `Day ${todayIdx} · ${title} · ${formatTripDate(todayIdx)}`;
+
+        // Create text content
+        const textDiv = document.createElement("div");
+        textDiv.textContent = `Day ${todayIdx} · ${title} · ${formatTripDate(todayIdx)}`;
+        el.appendChild(textDiv);
+
+        // Create progress bar
+        const progressContainer = document.createElement("div");
+        progressContainer.className = "trip-progress";
+
+        const barContainer = document.createElement("div");
+        barContainer.className = "progress-bar-container";
+
+        const barFill = document.createElement("div");
+        barFill.className = "progress-bar-fill";
+        const percentage = Math.round((todayIdx / tripData.totalDays) * 100);
+        barFill.style.width = `${percentage}%`;
+
+        const progressText = document.createElement("span");
+        progressText.className = "progress-text";
+        progressText.textContent = `${percentage}% complete`;
+
+        barContainer.appendChild(barFill);
+        progressContainer.appendChild(barContainer);
+        progressContainer.appendChild(progressText);
+        el.appendChild(progressContainer);
       } else if (todayIdx < 1) {
         const days = 1 - todayIdx;
         el.classList.remove("active");
         el.textContent = `T-minus ${days} day${days === 1 ? "" : "s"} until departure`;
       } else {
         el.classList.remove("active");
-        el.textContent = "Trip complete — Hope it was incredible!";
+
+        // Trip complete with 100% progress
+        const textDiv = document.createElement("div");
+        textDiv.textContent = "Trip complete — Hope it was incredible!";
+        el.appendChild(textDiv);
+
+        const progressContainer = document.createElement("div");
+        progressContainer.className = "trip-progress";
+
+        const barContainer = document.createElement("div");
+        barContainer.className = "progress-bar-container";
+
+        const barFill = document.createElement("div");
+        barFill.className = "progress-bar-fill";
+        barFill.style.width = "100%";
+
+        const progressText = document.createElement("span");
+        progressText.className = "progress-text";
+        progressText.textContent = "100% complete";
+
+        barContainer.appendChild(barFill);
+        progressContainer.appendChild(barContainer);
+        progressContainer.appendChild(progressText);
+        el.appendChild(progressContainer);
       }
     }
 
