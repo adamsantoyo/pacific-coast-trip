@@ -886,7 +886,7 @@
       <h1>Pacific Coast Road Trip</h1>
       <p class="subtitle">Seattle to Long Beach · 14 days of adventure</p>
 
-      <div class="stats">
+      <div class="stats" id="statsRow">
         <div class="stat-card">
           <div class="stat-label">Total Days</div>
           <div class="stat-value">14</div>
@@ -1478,6 +1478,52 @@
       }
     }
 
+    function renderStats() {
+      const el = document.getElementById("statsRow");
+      if (!el) return;
+      const todayIdx = computeTodayIndex();
+
+      let countdownLabel, countdownValue;
+      if (todayIdx < 1) {
+        const days = 1 - todayIdx;
+        countdownLabel = "Days to Go";
+        countdownValue = days;
+      } else if (todayIdx <= tripData.totalDays) {
+        countdownLabel = "On the Road";
+        countdownValue = todayIdx + " / " + tripData.totalDays;
+      } else {
+        countdownLabel = "Trip";
+        countdownValue = "Done!";
+      }
+
+      let totalMiles = 0;
+      for (let i = 1; i <= tripData.totalDays; i++) {
+        const m = driveMilesForDay(i);
+        if (m) totalMiles += m;
+      }
+      // Fallback shown before map geometry is loaded (initializeMap populates DAY_GEOMETRY).
+      // ~2,600 is the approximate sum of all day legs as planned.
+      const ESTIMATED_TOTAL_MILES = "~2,600";
+
+      const stops = tripData.waypoints.filter(function (w) {
+        return w.type !== "start" && w.type !== "end";
+      }).length;
+
+      const cards = [
+        { label: countdownLabel, value: countdownValue },
+        { label: "Total Days", value: tripData.totalDays },
+        { label: "Drive Miles", value: totalMiles > 0 ? Math.round(totalMiles).toLocaleString() : ESTIMATED_TOTAL_MILES },
+        { label: "Stops", value: stops }
+      ];
+
+      el.innerHTML = cards.map(function (c) {
+        return '<div class="stat-card">'
+          + '<div class="stat-label">' + escapeHTML(String(c.label)) + '</div>'
+          + '<div class="stat-value">' + escapeHTML(String(c.value)) + '</div>'
+          + '</div>';
+      }).join("");
+    }
+
     function initializeMap() {
       leafletMap = L.map('map').setView([37, -121.5], 8);
 
@@ -1605,6 +1651,8 @@
     tryInitMap();
     // Geometry is now loaded — re-run day-card meta to fill in drive distances.
     try { populateAllDayCards(); } catch (e) {}
+    // Re-render stats now that drive geometry is available for mileage totals.
+    try { renderStats(); } catch (e) {}
     // After first paint, ensure Leaflet has measured the real size.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -1616,7 +1664,12 @@
         if (todayIdx >= 1 && todayIdx <= tripData.totalDays) {
           setMapDay(todayIdx);
           const card = document.querySelector(`.day-card[data-day="${todayIdx}"]`);
-          if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+          if (card) {
+            card.classList.add("expanded");
+            card.querySelector(".day-header").setAttribute("aria-expanded", "true");
+            // Use 'start' so the top of the expanded card is visible, not buried mid-viewport.
+            card.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
         } else {
           setMapDay(0);
         }
