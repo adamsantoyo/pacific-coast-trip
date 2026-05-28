@@ -872,6 +872,102 @@
       object-fit: contain;
     }
 
+    /* Toast */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(12px);
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      z-index: 3000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      max-width: min(520px, calc(100vw - 32px));
+      text-align: center;
+    }
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Share dialog */
+    .dialog-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2500;
+      padding: 18px;
+    }
+    .dialog-overlay.visible { display: flex; }
+    .dialog {
+      width: 100%;
+      max-width: 520px;
+      background: var(--color-bg-primary);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+    }
+    .dialog-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: 6px;
+    }
+    .dialog-subtitle {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      margin-bottom: 12px;
+    }
+    .dialog-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .dialog-input {
+      flex: 1;
+      min-width: 0;
+      padding: 10px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background: var(--color-bg-secondary);
+      color: var(--color-text-primary);
+      font-size: 13px;
+    }
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .dialog-btn {
+      min-height: 40px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--color-border);
+      background: var(--color-bg-secondary);
+      color: var(--color-text-primary);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .dialog-btn.primary {
+      border-color: var(--color-accent);
+      background: var(--color-accent);
+      color: #fff;
+    }
+    .dialog-btn:hover:not(:disabled) { filter: brightness(1.03); }
+
     /* Family view hides */
     body.family-view .header-btn.auth-btn,
     body.family-view #bookingChecklist,
@@ -932,6 +1028,22 @@
   <div class="lightbox-overlay" id="lightbox" role="dialog" aria-modal="true">
     <img alt="" id="lightboxImg">
   </div>
+
+  <div class="dialog-overlay" id="shareDialog" role="dialog" aria-modal="true" aria-labelledby="shareDialogTitle" aria-describedby="shareDialogDesc">
+    <div class="dialog" role="document">
+      <div class="dialog-title" id="shareDialogTitle">Share family link</div>
+      <div class="dialog-subtitle" id="shareDialogDesc">Copy and send this link to open the read-only family view.</div>
+      <div class="dialog-row">
+        <input class="dialog-input" id="shareLinkInput" type="text" inputmode="url" autocomplete="off" readonly>
+        <button class="dialog-btn primary" id="shareCopyBtn" type="button">Copy</button>
+      </div>
+      <div class="dialog-actions">
+        <button class="dialog-btn" id="shareCloseBtn" type="button">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" aria-live="polite" aria-atomic="true"></div>
 
   <script>
     const tripData = {
@@ -1750,19 +1862,102 @@
       const h1 = document.querySelector("h1");
       if (h1) h1.textContent = "Following Adam & Cori on the Coast";
     }
-    document.getElementById("shareBtn")?.addEventListener("click", async () => {
+
+    const toastEl = document.getElementById("toast");
+    let toastTimer = null;
+    function showToast(message) {
+      if (!toastEl) return;
+      toastEl.textContent = message;
+      toastEl.classList.add("visible");
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove("visible"), 2000);
+    }
+
+    function getFamilyShareUrl() {
       const url = new URL(location.href);
       url.searchParams.set("view", "family");
-      const shareUrl = url.toString();
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        const btn = document.getElementById("shareBtn");
-        const orig = btn.textContent;
-        btn.textContent = "Link copied!";
-        setTimeout(() => { btn.textContent = orig; }, 1500);
-      } catch (e) {
-        prompt("Copy this link:", shareUrl);
+      return url.toString();
+    }
+
+    async function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
       }
+      return false;
+    }
+
+    const shareDialog = document.getElementById("shareDialog");
+    const shareInput = document.getElementById("shareLinkInput");
+    const shareCopyBtn = document.getElementById("shareCopyBtn");
+    const shareCloseBtn = document.getElementById("shareCloseBtn");
+    let lastActiveEl = null;
+
+    function closeShareDialog() {
+      shareDialog?.classList.remove("visible");
+      if (lastActiveEl && typeof lastActiveEl.focus === "function") lastActiveEl.focus();
+      lastActiveEl = null;
+    }
+
+    function openShareDialog(shareUrl) {
+      if (!shareDialog || !shareInput) return;
+      lastActiveEl = document.activeElement;
+      shareInput.value = shareUrl;
+      shareDialog.classList.add("visible");
+      shareInput.focus();
+      shareInput.select();
+    }
+
+    shareDialog?.addEventListener("click", (e) => {
+      if (e.target === shareDialog) closeShareDialog();
+    });
+    shareCloseBtn?.addEventListener("click", closeShareDialog);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && shareDialog?.classList.contains("visible")) closeShareDialog();
+    });
+
+    async function copyFromDialog() {
+      const shareUrl = shareInput?.value || "";
+      if (!shareUrl) return;
+      try {
+        const ok = await copyText(shareUrl);
+        if (ok) {
+          showToast("Link copied");
+          return;
+        }
+      } catch (e) {}
+      shareInput?.focus();
+      shareInput?.select();
+      try {
+        const ok = document.execCommand("copy");
+        showToast(ok ? "Link copied" : "Select + copy the link");
+      } catch (e) {
+        showToast("Select + copy the link");
+      }
+    }
+    shareCopyBtn?.addEventListener("click", copyFromDialog);
+
+    document.getElementById("shareBtn")?.addEventListener("click", async () => {
+      const shareUrl = getFamilyShareUrl();
+
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "Pacific Coast Trip", text: "Follow the trip (read-only family view):", url: shareUrl });
+          return;
+        } catch (e) {
+          // User cancelled or share failed; fall back to copy flows.
+        }
+      }
+
+      try {
+        const ok = await copyText(shareUrl);
+        if (ok) {
+          showToast("Link copied");
+          return;
+        }
+      } catch (e) {}
+
+      openShareDialog(shareUrl);
     });
 
     // ──────────────────────────────────────────────────────────────
