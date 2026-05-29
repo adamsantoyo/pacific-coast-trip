@@ -1471,11 +1471,11 @@
       nav.innerHTML = `
         <div class="day-quick-nav-header">
           <div class="day-quick-nav-title">Trip timeline</div>
-          <div class="day-quick-nav-hint">Tap a day to expand it and focus the map</div>
+          <div class="day-quick-nav-hint">Select a day to expand it and focus the map</div>
         </div>
-        <div class="day-quick-nav-list" role="list">
+        <div class="day-quick-nav-list">
           ${days.map(day => `
-            <button class="day-quick-nav-btn${todayIdx === day.day ? " is-today" : ""}" type="button" data-day="${day.day}" role="listitem">
+            <button class="day-quick-nav-btn${todayIdx === day.day ? " is-today" : ""}" type="button" data-day="${day.day}">
               <span class="day-quick-nav-day">Day ${day.day} · ${escapeHTML(formatTripDate(day.day))}</span>
               <span class="day-quick-nav-name">${escapeHTML(day.title)}</span>
             </button>
