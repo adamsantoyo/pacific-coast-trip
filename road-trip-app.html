@@ -2035,6 +2035,30 @@
       });
     }
 
+    // ──────────────────────────────────────────────────────────────
+    // Phase 7 — family view detection + share button
+    // ──────────────────────────────────────────────────────────────
+    const IS_FAMILY = new URLSearchParams(location.search).get("view") === "family";
+    if (IS_FAMILY) {
+      document.body.classList.add("family-view");
+      const h1 = document.querySelector("h1");
+      if (h1) h1.textContent = "Following Adam & Cori on the Coast";
+    }
+    document.getElementById("shareBtn")?.addEventListener("click", async () => {
+      const url = new URL(location.href);
+      url.searchParams.set("view", "family");
+      const shareUrl = url.toString();
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        const btn = document.getElementById("shareBtn");
+        const orig = btn.textContent;
+        btn.textContent = "Link copied!";
+        setTimeout(() => { btn.textContent = orig; }, 1500);
+      } catch (e) {
+        prompt("Copy this link:", shareUrl);
+      }
+    });
+
     renderTripBanner();
     renderItinerary();
     renderBookingChecklist();
@@ -2192,30 +2216,6 @@
       el.textContent = `${icon} ${hi}°/${lo}°F · ${wp.name}`;
       container.appendChild(el);
     }
-
-    // ──────────────────────────────────────────────────────────────
-    // Phase 7 — family view detection + share button
-    // ──────────────────────────────────────────────────────────────
-    const IS_FAMILY = new URLSearchParams(location.search).get("view") === "family";
-    if (IS_FAMILY) {
-      document.body.classList.add("family-view");
-      const h1 = document.querySelector("h1");
-      if (h1) h1.textContent = "Following Adam & Cori on the Coast";
-    }
-    document.getElementById("shareBtn")?.addEventListener("click", async () => {
-      const url = new URL(location.href);
-      url.searchParams.set("view", "family");
-      const shareUrl = url.toString();
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        const btn = document.getElementById("shareBtn");
-        const orig = btn.textContent;
-        btn.textContent = "Link copied!";
-        setTimeout(() => { btn.textContent = orig; }, 1500);
-      } catch (e) {
-        prompt("Copy this link:", shareUrl);
-      }
-    });
 
     // ──────────────────────────────────────────────────────────────
     // Lightbox
