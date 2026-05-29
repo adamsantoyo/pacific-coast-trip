@@ -2,7 +2,7 @@
 // Cache-first for app shell + leaflet + previously-seen OSM tiles.
 // Network-first (with no caching) for Firestore/Storage/Open-Meteo.
 
-const CACHE_NAME = "pct-v1";
+const CACHE_NAME = "pct-v2";
 const APP_SHELL = [
   "./",
   "./road-trip-app.html",
