@@ -1815,8 +1815,8 @@
               ${isToday ? '<span class="day-badge badge-today">TODAY</span>' : ''}Day ${day.day} · ${escapeHTML(dateStr)}
             </div>
             <div class="day-subtitle">${escapeHTML(day.title)}</div>
-            ${day.subtitle ? `<div class="day-detail">${escapeHTML(day.subtitle)}</div>` : ""}
-            ${day.highlights && day.highlights.length > 0 ? `<div class="highlight-chip">✓ ${escapeHTML(day.highlights[0])}</div>` : ""}
+            ${day.subtitle ? `<div class="day-detail" data-day-subtitle></div>` : ""}
+            ${day.highlights && day.highlights.length > 0 ? `<div class="highlight-chip" data-day-highlight></div>` : ""}
           </div>
           <span class="expand-icon" aria-hidden="true">▼</span>
         </div>
@@ -1853,6 +1853,11 @@
         + `<div class="photo-strip" data-photo-strip="${day.day}"></div>`
         + `<div class="journal-section" data-journal="${day.day}"></div>`
         + `</div>`;
+
+      const subtitle = card.querySelector("[data-day-subtitle]");
+      if (subtitle) subtitle.textContent = day.subtitle;
+      const highlight = card.querySelector("[data-day-highlight]");
+      if (highlight) highlight.textContent = `✓ ${day.highlights[0]}`;
 
       const header = card.querySelector(".day-header");
       const toggle = () => {
