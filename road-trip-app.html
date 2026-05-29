@@ -1007,7 +1007,7 @@
     </header>
 
     <div class="trip-banner" id="tripBanner"></div>
-    <div class="day-quick-nav" id="dayQuickNav" role="navigation" aria-label="Navigate to trip days"></div>
+    <div class="day-quick-nav" id="dayQuickNav" role="navigation" aria-label="Trip timeline navigation"></div>
 
     <div class="toolbar">
       <input type="text" class="search-box" id="searchBox" placeholder="Search days, locations, activities...">
@@ -1376,7 +1376,6 @@
     }
 
     const CHECKLIST_STORAGE_KEY = "pct.bookingChecklist.v2";
-    const DATE_SEPARATOR = " · ";
 
     function escapeHTML(str) {
       if (str == null) return "";
@@ -1510,7 +1509,7 @@
       const d = new Date(start.getTime() + (dayNum - 1) * 86400000);
       const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      return `${weekdays[d.getDay()]}${DATE_SEPARATOR}${months[d.getMonth()]} ${d.getDate()}`;
+      return `${weekdays[d.getDay()]} · ${months[d.getMonth()]} ${d.getDate()}`;
     }
 
     function computeTodayIndex() {
