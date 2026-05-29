@@ -1477,7 +1477,7 @@
         <div class="day-quick-nav-list">
           ${days.map(day => `
             <button class="day-quick-nav-btn${todayIdx === day.day ? " is-today" : ""}" type="button" data-day="${day.day}">
-              <span class="day-quick-nav-day">Day ${day.day}${DATE_SEPARATOR}${escapeHTML(formatTripDate(day.day))}</span>
+              <span class="day-quick-nav-day">Day ${day.day}: ${escapeHTML(formatTripDate(day.day))}</span>
               <span class="day-quick-nav-name">${escapeHTML(day.title)}</span>
             </button>
           `).join("")}
@@ -1486,8 +1486,11 @@
       nav.querySelectorAll(".day-quick-nav-btn").forEach(btn => {
         btn.addEventListener("click", () => {
           const dayNum = Number(btn.dataset.day);
-          clearSearch();
-          openDay(dayNum);
+          if (clearSearch()) {
+            requestAnimationFrame(() => openDay(dayNum));
+          } else {
+            openDay(dayNum);
+          }
         });
       });
       updateDayQuickNav();
@@ -1626,11 +1629,12 @@
     });
 
     function clearSearch() {
-      if (!searchTerm) return;
+      if (!searchTerm) return false;
       searchTerm = "";
       const searchBox = document.getElementById("searchBox");
       if (searchBox) searchBox.value = "";
       renderItinerary();
+      return true;
     }
 
     function findDay(dayNum) {
