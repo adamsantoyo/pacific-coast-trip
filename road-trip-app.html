@@ -2362,7 +2362,7 @@
       if (IS_FAMILY) { btn.hidden = true; return; }
       if (!window.firebaseReady) { btn.hidden = true; return; }
       btn.hidden = false;
-      if (window.firebaseState.user) {
+      if (window.firebaseState?.user) {
         btn.textContent = "Editing mode · sign out";
         btn.classList.add("primary");
       } else {
