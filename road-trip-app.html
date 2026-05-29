@@ -1376,6 +1376,7 @@
     }
 
     const CHECKLIST_STORAGE_KEY = "pct.bookingChecklist.v2";
+    const MS_PER_DAY = 86400000;
 
     function escapeHTML(str) {
       if (str == null) return "";
@@ -1476,7 +1477,7 @@
         <div class="day-quick-nav-list">
           ${days.map(day => `
             <button class="day-quick-nav-btn${todayIdx === day.day ? " is-today" : ""}" type="button" data-day="${day.day}">
-              <span class="day-quick-nav-day">Day ${day.day}: <time datetime="${formatTripISODate(day.day)}">${escapeHTML(formatTripDate(day.day))}</time></span>
+              <span class="day-quick-nav-day">Day ${escapeHTML(day.day)}: <time datetime="${formatTripISODate(day.day)}">${escapeHTML(formatTripDate(day.day))}</time></span>
               <span class="day-quick-nav-name">${escapeHTML(day.title)}</span>
             </button>
           `).join("")}
@@ -1486,7 +1487,7 @@
         btn.addEventListener("click", () => {
           const dayNum = Number(btn.dataset.day);
           clearSearch();
-          requestAnimationFrame(() => openDay(dayNum));
+          openDay(dayNum);
         });
       });
       updateDayQuickNav();
@@ -1507,7 +1508,7 @@
 
     function getTripDate(dayNum) {
       const start = new Date(tripData.startDate + "T00:00:00");
-      return new Date(start.getTime() + (dayNum - 1) * 86400000);
+      return new Date(start.getTime() + (dayNum - 1) * MS_PER_DAY);
     }
 
     function formatTripISODate(dayNum) {
