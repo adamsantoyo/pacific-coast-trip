@@ -1616,7 +1616,16 @@
         if (todayIdx >= 1 && todayIdx <= tripData.totalDays) {
           setMapDay(todayIdx);
           const card = document.querySelector(`.day-card[data-day="${todayIdx}"]`);
-          if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+          if (card) {
+            // Auto-expand today's card so the plan is visible on open,
+            // without requiring an extra tap.
+            if (!card.classList.contains("expanded")) {
+              card.classList.add("expanded");
+              const header = card.querySelector(".day-header");
+              if (header) header.setAttribute("aria-expanded", "true");
+            }
+            card.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
         } else {
           setMapDay(0);
         }
