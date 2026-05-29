@@ -2244,7 +2244,7 @@
     };
 
     function isEditor() {
-      return !!(window.firebaseReady && window.firebaseState.user && !IS_FAMILY);
+      return !!(window.firebaseReady && window.firebaseState && window.firebaseState.user && !IS_FAMILY);
     }
 
     function populateDayMeta(dayNum, container) {
@@ -2261,7 +2261,7 @@
     }
 
     function populateDayPhotos(dayNum, container) {
-      const photos = (window.firebaseState.photos[dayNum] || []);
+      const photos = (window.firebaseState?.photos?.[dayNum] || []);
       const hasPhotos = photos.length > 0;
       const canEdit = isEditor();
       if (!hasPhotos && !canEdit) { container.innerHTML = ""; container.style.display = "none"; return; }
@@ -2299,7 +2299,7 @@
 
     const journalDebounce = {};
     function populateDayJournal(dayNum, container) {
-      const text = window.firebaseState.journals[dayNum] || "";
+      const text = window.firebaseState?.journals?.[dayNum] || "";
       const canEdit = isEditor();
       container.innerHTML = "";
       if (IS_FAMILY || !canEdit) {
