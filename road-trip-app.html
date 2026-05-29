@@ -144,6 +144,91 @@
       border-left-color: var(--color-today);
     }
 
+    .day-quick-nav {
+      margin-bottom: 18px;
+    }
+
+    .day-quick-nav-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .day-quick-nav-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-primary);
+    }
+
+    .day-quick-nav-hint {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+
+    .day-quick-nav-list {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 0 10px;
+      scroll-snap-type: x proximity;
+      scrollbar-width: thin;
+    }
+
+    .day-quick-nav-btn {
+      flex: 0 0 150px;
+      min-height: 74px;
+      padding: 10px 12px;
+      text-align: left;
+      background: var(--color-bg-secondary);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      cursor: pointer;
+      scroll-snap-align: start;
+      transition: all 0.15s;
+    }
+
+    .day-quick-nav-btn:hover,
+    .day-quick-nav-btn:focus-visible {
+      border-color: var(--color-accent);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.16);
+      outline: none;
+    }
+
+    .day-quick-nav-btn.active {
+      background: rgba(37, 99, 235, 0.1);
+      border-color: var(--color-accent);
+    }
+
+    .day-quick-nav-btn.is-today {
+      border-color: var(--color-today);
+    }
+
+    .day-quick-nav-day {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-accent);
+      margin-bottom: 4px;
+    }
+
+    .day-quick-nav-btn.is-today .day-quick-nav-day {
+      color: var(--color-today);
+    }
+
+    .day-quick-nav-name {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: 13px;
+      line-height: 1.25;
+    }
+
     .map-nav {
       position: absolute;
       top: 10px;
@@ -605,6 +690,28 @@
         margin-bottom: 12px;
       }
 
+      .day-quick-nav {
+        margin: 12px 0;
+      }
+
+      .day-quick-nav-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .day-quick-nav-list {
+        padding-bottom: 8px;
+        scrollbar-width: none;
+      }
+
+      .day-quick-nav-list::-webkit-scrollbar { display: none; }
+
+      .day-quick-nav-btn {
+        flex-basis: 136px;
+        min-height: 70px;
+      }
+
       .search-box {
         width: 100%;
         min-width: 0;
@@ -900,6 +1007,7 @@
     </header>
 
     <div class="trip-banner" id="tripBanner"></div>
+    <div class="day-quick-nav" id="dayQuickNav" aria-label="Jump to a trip day"></div>
 
     <div class="toolbar">
       <input type="text" class="search-box" id="searchBox" placeholder="Search days, locations, activities...">
@@ -1264,6 +1372,7 @@
       }
       if (prevBtn) prevBtn.disabled = n <= 0;
       if (nextBtn) nextBtn.disabled = n >= tripData.totalDays;
+      updateDayQuickNav();
     }
 
     const CHECKLIST_STORAGE_KEY = "pct.bookingChecklist.v2";
@@ -1330,6 +1439,74 @@
 
       // Phase 5+4+7: populate post-render data on each day card.
       try { populateAllDayCards(); } catch (e) { console.warn("populateAllDayCards failed", e); }
+    }
+
+    function allTripDays() {
+      return tripData.sections.flatMap(section => section.days);
+    }
+
+    function getDefaultQuickNavDay() {
+      const todayIdx = computeTodayIndex();
+      if (todayIdx < 1) return 1;
+      if (todayIdx > tripData.totalDays) return tripData.totalDays;
+      return todayIdx;
+    }
+
+    function updateDayQuickNav() {
+      const nav = document.getElementById("dayQuickNav");
+      if (!nav) return;
+      const activeDay = currentMapDay || getDefaultQuickNavDay();
+      nav.querySelectorAll(".day-quick-nav-btn").forEach(btn => {
+        const isActive = Number(btn.dataset.day) === activeDay;
+        btn.classList.toggle("active", isActive);
+        btn.setAttribute("aria-current", isActive ? "date" : "false");
+      });
+    }
+
+    function renderDayQuickNav() {
+      const nav = document.getElementById("dayQuickNav");
+      if (!nav) return;
+      const todayIdx = computeTodayIndex();
+      const days = allTripDays();
+      nav.innerHTML = `
+        <div class="day-quick-nav-header">
+          <div class="day-quick-nav-title">Trip timeline</div>
+          <div class="day-quick-nav-hint">Tap a day to expand it and focus the map</div>
+        </div>
+        <div class="day-quick-nav-list" role="list">
+          ${days.map(day => `
+            <button class="day-quick-nav-btn${todayIdx === day.day ? " is-today" : ""}" type="button" data-day="${day.day}" role="listitem">
+              <span class="day-quick-nav-day">Day ${day.day} · ${escapeHTML(formatTripDate(day.day))}</span>
+              <span class="day-quick-nav-name">${escapeHTML(day.title)}</span>
+            </button>
+          `).join("")}
+        </div>
+      `;
+      nav.querySelectorAll(".day-quick-nav-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const dayNum = Number(btn.dataset.day);
+          const searchBox = document.getElementById("searchBox");
+          if (searchTerm) {
+            searchTerm = "";
+            if (searchBox) searchBox.value = "";
+            renderItinerary();
+          }
+          openDay(dayNum);
+        });
+      });
+      updateDayQuickNav();
+    }
+
+    function openDay(dayNum) {
+      const card = document.querySelector(`.day-card[data-day="${dayNum}"]`);
+      if (!card) return;
+      const header = card.querySelector(".day-header");
+      if (!card.classList.contains("expanded")) {
+        card.classList.add("expanded");
+        if (header) header.setAttribute("aria-expanded", "true");
+      }
+      setMapDay(dayNum);
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function formatTripDate(dayNum) {
@@ -1584,6 +1761,7 @@
     }
 
     renderTripBanner();
+    renderDayQuickNav();
     renderItinerary();
     renderBookingChecklist();
 
