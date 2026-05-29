@@ -886,7 +886,7 @@
       <h1>Pacific Coast Road Trip</h1>
       <p class="subtitle">Seattle to Long Beach · 14 days of adventure</p>
 
-      <div class="stats">
+      <div class="stats" id="statsContainer">
         <div class="stat-card">
           <div class="stat-label">Total Days</div>
           <div class="stat-value">14</div>
@@ -1459,6 +1459,40 @@
       return null;
     }
 
+    function renderStats() {
+      const container = document.getElementById("statsContainer");
+      if (!container) return;
+      const todayIdx = computeTodayIndex();
+      const totalDays = tripData.totalDays;
+      const totalStops = tripData.waypoints.filter(w => w.type === "stop" || w.type === "overnight").length;
+      const startDate = new Date(tripData.startDate + "T00:00:00");
+      const endDate = new Date(startDate.getTime() + (totalDays - 1) * 86400000);
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const dateRange = `${months[startDate.getMonth()]} ${startDate.getDate()}–${months[endDate.getMonth()]} ${endDate.getDate()}`;
+
+      function stat(label, value) {
+        return `<div class="stat-card"><div class="stat-label">${label}</div><div class="stat-value">${value}</div></div>`;
+      }
+
+      let html = stat("Total Days", totalDays);
+
+      if (todayIdx >= 1 && todayIdx <= totalDays) {
+        html += stat("Today", `Day ${todayIdx}`);
+        const left = totalDays - todayIdx;
+        html += stat("Days Left", left);
+      } else if (todayIdx < 1) {
+        const daysUntil = 1 - todayIdx;
+        html += stat("Departs", dateRange);
+        html += stat("Days Away", daysUntil);
+      } else {
+        html += stat("Trip", "Complete ✓");
+      }
+
+      html += stat("Stops", totalStops);
+
+      container.innerHTML = html;
+    }
+
     function renderTripBanner() {
       const el = document.getElementById("tripBanner");
       if (!el) return;
@@ -1586,6 +1620,7 @@
     renderTripBanner();
     renderItinerary();
     renderBookingChecklist();
+    renderStats();
 
     const isMobile = () => window.innerWidth <= 768;
 
@@ -1616,7 +1651,12 @@
         if (todayIdx >= 1 && todayIdx <= tripData.totalDays) {
           setMapDay(todayIdx);
           const card = document.querySelector(`.day-card[data-day="${todayIdx}"]`);
-          if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+          if (card) {
+            card.classList.add("expanded");
+            const hdr = card.querySelector(".day-header");
+            if (hdr) hdr.setAttribute("aria-expanded", "true");
+            card.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
         } else {
           setMapDay(0);
         }
