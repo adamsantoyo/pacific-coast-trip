@@ -1007,7 +1007,7 @@
     </header>
 
     <div class="trip-banner" id="tripBanner"></div>
-    <div class="day-quick-nav" id="dayQuickNav" role="navigation" aria-label="Jump to a trip day"></div>
+    <div class="day-quick-nav" id="dayQuickNav" role="navigation" aria-label="Navigate to trip days"></div>
 
     <div class="toolbar">
       <input type="text" class="search-box" id="searchBox" placeholder="Search days, locations, activities...">
@@ -1446,7 +1446,7 @@
       return tripData.sections.flatMap(section => section.days);
     }
 
-    function getDefaultQuickNavDay() {
+    function getActiveQuickNavDay() {
       const todayIdx = computeTodayIndex();
       if (todayIdx < 1) return 1;
       if (todayIdx > tripData.totalDays) return tripData.totalDays;
@@ -1456,7 +1456,7 @@
     function updateDayQuickNav() {
       const nav = document.getElementById("dayQuickNav");
       if (!nav) return;
-      const activeDay = currentMapDay || getDefaultQuickNavDay();
+      const activeDay = currentMapDay || getActiveQuickNavDay();
       nav.querySelectorAll(".day-quick-nav-btn").forEach(btn => {
         const isActive = Number(btn.dataset.day) === activeDay;
         btn.classList.toggle("active", isActive);
@@ -1486,11 +1486,8 @@
       nav.querySelectorAll(".day-quick-nav-btn").forEach(btn => {
         btn.addEventListener("click", () => {
           const dayNum = Number(btn.dataset.day);
-          if (clearSearch()) {
-            requestAnimationFrame(() => openDay(dayNum));
-          } else {
-            openDay(dayNum);
-          }
+          clearSearch();
+          requestAnimationFrame(() => openDay(dayNum));
         });
       });
       updateDayQuickNav();
@@ -1629,12 +1626,11 @@
     });
 
     function clearSearch() {
-      if (!searchTerm) return false;
+      if (!searchTerm) return;
       searchTerm = "";
       const searchBox = document.getElementById("searchBox");
       if (searchBox) searchBox.value = "";
       renderItinerary();
-      return true;
     }
 
     function findDay(dayNum) {
