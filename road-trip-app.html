@@ -1007,7 +1007,7 @@
     </header>
 
     <div class="trip-banner" id="tripBanner"></div>
-    <div class="day-quick-nav" id="dayQuickNav" aria-label="Jump to a trip day"></div>
+    <div class="day-quick-nav" id="dayQuickNav" role="navigation" aria-label="Jump to a trip day"></div>
 
     <div class="toolbar">
       <input type="text" class="search-box" id="searchBox" placeholder="Search days, locations, activities...">
@@ -1376,6 +1376,7 @@
     }
 
     const CHECKLIST_STORAGE_KEY = "pct.bookingChecklist.v2";
+    const DATE_SEPARATOR = " · ";
 
     function escapeHTML(str) {
       if (str == null) return "";
@@ -1476,7 +1477,7 @@
         <div class="day-quick-nav-list">
           ${days.map(day => `
             <button class="day-quick-nav-btn${todayIdx === day.day ? " is-today" : ""}" type="button" data-day="${day.day}">
-              <span class="day-quick-nav-day">Day ${day.day} · ${escapeHTML(formatTripDate(day.day))}</span>
+              <span class="day-quick-nav-day">Day ${day.day}${DATE_SEPARATOR}${escapeHTML(formatTripDate(day.day))}</span>
               <span class="day-quick-nav-name">${escapeHTML(day.title)}</span>
             </button>
           `).join("")}
@@ -1485,12 +1486,7 @@
       nav.querySelectorAll(".day-quick-nav-btn").forEach(btn => {
         btn.addEventListener("click", () => {
           const dayNum = Number(btn.dataset.day);
-          const searchBox = document.getElementById("searchBox");
-          if (searchTerm) {
-            searchTerm = "";
-            if (searchBox) searchBox.value = "";
-            renderItinerary();
-          }
+          clearSearch();
           openDay(dayNum);
         });
       });
@@ -1514,7 +1510,7 @@
       const d = new Date(start.getTime() + (dayNum - 1) * 86400000);
       const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      return `${weekdays[d.getDay()]} · ${months[d.getMonth()]} ${d.getDate()}`;
+      return `${weekdays[d.getDay()]}${DATE_SEPARATOR}${months[d.getMonth()]} ${d.getDate()}`;
     }
 
     function computeTodayIndex() {
@@ -1628,6 +1624,14 @@
         renderItinerary();
       }, 200);
     });
+
+    function clearSearch() {
+      if (!searchTerm) return;
+      searchTerm = "";
+      const searchBox = document.getElementById("searchBox");
+      if (searchBox) searchBox.value = "";
+      renderItinerary();
+    }
 
     function findDay(dayNum) {
       for (const sec of tripData.sections) {
